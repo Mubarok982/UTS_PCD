@@ -6,6 +6,8 @@ from tensorflow.keras.models import load_model
 import os
 import gdown  
 
+
+
 #Konfigurasi Halaman
 st.set_page_config(page_title="Klasifikasi Serangga Pertanian", page_icon="🐞", layout="centered")
 st.title("🦋 Klasifikasi Serangga Pertanian Menggunakan CNN")
