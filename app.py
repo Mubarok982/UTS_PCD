@@ -26,28 +26,28 @@ classes = [
 ]
 
 def full_preprocessing_pipeline(image_array, size=(256, 256)):
-    # --- Citra Asli ---
+    #Citra Asli
     original_rgb = cv2.cvtColor(image_array, cv2.COLOR_BGR2RGB)
 
-    # --- Pemampatan (Resize) ---
+    #Pemampatan (Resize)
     compressed = cv2.resize(original_rgb, size)
 
-    # --- Grayscale ---
+    #Grayscale
     gray = cv2.cvtColor(compressed, cv2.COLOR_RGB2GRAY)
 
-    # --- Binerisasi (Threshold) ---
+    #Binerisasi (Threshold)
     _, binary = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
 
-    # --- Filtering (Gaussian Blur) ---
+    #Filtering (Gaussian Blur)
     blurred = cv2.GaussianBlur(compressed, (3, 3), 0)
 
-    # --- Enhancement (Histogram Equalization) ---
+    #Enhancement (Histogram Equalization)
     gray_eq = cv2.equalizeHist(gray)
 
-    # --- Normalisasi (0–1) ---
+    #Normalisasi (0–1)
     normalized = blurred / 255.0
 
-    # --- Siap Masuk Model CNN ---
+    #Siap Masuk Model CNN
     input_tensor = np.expand_dims(normalized, axis=0)
 
     return {
