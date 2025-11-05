@@ -1,40 +1,41 @@
-import streamlit as st
-import numpy as np
-import cv2
-import tensorflow as tf
-from tensorflow.keras.models import load_model
 import os
-import gdown  
+import gdown
+import tensorflow as tf
+import streamlit as st
 
-#Konfigurasi Halaman
-st.set_page_config(page_title="Klasifikasi Serangga Pertanian", page_icon="🐞", layout="centered")
-st.title("🦋 Klasifikasi Serangga Pertanian Menggunakan CNN")
-st.write("""
-Aplikasi ini menampilkan **seluruh tahapan preprocessing citra digital** sebelum dilakukan klasifikasi menggunakan model CNN.
-""")
-
-#Download Model Otomatis dari Google Drive
 MODEL_PATH = "pest_classifier_cnn.h5"
-# Ganti ID di bawah dengan ID model kamu dari Google Drive
-# Contoh: https://drive.google.com/file/d/1AbCdEfGh123456789/view?usp=sharing
-DRIVE_URL = "https://drive.google.com/file/d/19-zwiD61CRi-a6Nkf6XRcQvt-X1oWgPo/view?usp=sharing"
+DRIVE_URL = "https://drive.google.com/uc?id=19-zwiD61CRi-a6Nkf6XRcQvt-X1oWgPo"
 
+# === Download model otomatis dari Google Drive ===
 if not os.path.exists(MODEL_PATH):
-    st.info("📥 Mengunduh model dari Google Drive, harap tunggu sebentar...")
+    st.info("📥 Mengunduh model dari Google Drive... (~340MB)")
     try:
-        gdown.download(DRIVE_URL, MODEL_PATH, quiet=False)
-        st.success("✅ Model berhasil diunduh!")
+        # gunakan use_cookies=True agar bisa bypass konfirmasi ukuran file besar
+        gdown.download(DRIVE_URL, MODEL_PATH, quiet=True, fuzzy=True, use_cookies=True)
     except Exception as e:
-        st.error(f"Gagal mengunduh model dari Google Drive: {e}")
+        st.error(f"❌ Gagal mengunduh model: {e}")
         st.stop()
 
-#Memuat Model CNN
+# === Verifikasi ukuran file ===
+if not os.path.exists(MODEL_PATH):
+    st.error("❌ File model tidak ditemukan setelah unduhan.")
+    st.stop()
+
+file_size = os.path.getsize(MODEL_PATH)
+st.write(f"📦 Ukuran file model: {file_size / (1024*1024):.2f} MB")
+
+if file_size < 100_000:
+    st.error("❌ File model terlalu kecil — kemungkinan bukan file .h5 yang valid (mungkin HTML).")
+    st.stop()
+
+# === Load model CNN ===
 try:
-    model = load_model(MODEL_PATH)
-    st.success("✅ Model berhasil dimuat!")
+    model = tf.keras.models.load_model(MODEL_PATH)
+    st.success("✅ Model berhasil dimuat dan siap digunakan!")
 except Exception as e:
     st.error(f"❌ Gagal memuat model: {e}")
     st.stop()
+
 
 #Label Kelas
 classes = [
