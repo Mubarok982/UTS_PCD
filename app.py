@@ -4,7 +4,12 @@ import tensorflow as tf
 import streamlit as st
 
 MODEL_PATH = "pest_classifier_cnn.h5"
-DRIVE_URL = "https://drive.google.com/uc?id=19-zwiD61CRi-a6Nkf6XRcQvt-X1oWgPo"
+import gdown
+
+url = "https://drive.google.com/uc?id=19-zwiD61CRi-a6Nkf6XRcQvt-X1oWgPo"
+output = "pest_classifier_cnn.h5"
+gdown.download(url, output, fuzzy=True, quiet=False, use_cookies=False)
+
 
 # === Download model otomatis dari Google Drive ===
 if not os.path.exists(MODEL_PATH):
