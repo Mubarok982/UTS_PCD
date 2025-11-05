@@ -4,50 +4,70 @@ import cv2
 import tensorflow as tf
 from tensorflow.keras.models import load_model
 import os
+import gdown  
 
+#Konfigurasi Halaman
 st.set_page_config(page_title="Klasifikasi Serangga Pertanian", page_icon="🐞", layout="centered")
 st.title("🦋 Klasifikasi Serangga Pertanian Menggunakan CNN")
 st.write("""
 Aplikasi ini menampilkan **seluruh tahapan preprocessing citra digital** sebelum dilakukan klasifikasi menggunakan model CNN.
 """)
 
+#Download Model Otomatis dari Google Drive
 MODEL_PATH = "pest_classifier_cnn.h5"
+# Ganti ID di bawah dengan ID model kamu dari Google Drive
+# Contoh: https://drive.google.com/file/d/1AbCdEfGh123456789/view?usp=sharing
+DRIVE_URL = "https://drive.google.com/file/d/19-zwiD61CRi-a6Nkf6XRcQvt-X1oWgPo/view?usp=sharing"
 
 if not os.path.exists(MODEL_PATH):
-    st.error("❌ Model tidak ditemukan! Pastikan file `pest_classifier_model.h5` ada di folder ini.")
+    st.info("📥 Mengunduh model dari Google Drive, harap tunggu sebentar...")
+    try:
+        gdown.download(DRIVE_URL, MODEL_PATH, quiet=False)
+        st.success("✅ Model berhasil diunduh!")
+    except Exception as e:
+        st.error(f"Gagal mengunduh model dari Google Drive: {e}")
+        st.stop()
+
+#Memuat Model CNN
+try:
+    model = load_model(MODEL_PATH)
+    st.success("✅ Model berhasil dimuat!")
+except Exception as e:
+    st.error(f"❌ Gagal memuat model: {e}")
     st.stop()
 
-model = load_model(MODEL_PATH)
-st.success("✅ Model berhasil dimuat!")
-
+#Label Kelas
 classes = [
     'ants', 'bees', 'beetle', 'catterpillar', 'earthworms', 'earwig',
     'grasshopper', 'moth', 'slug', 'snail', 'wasp', 'weevil'
 ]
 
+#Fungsi Preprocessing Lengkap
 def full_preprocessing_pipeline(image_array, size=(256, 256)):
-    #Citra Asli
+    # Citra Asli
     original_rgb = cv2.cvtColor(image_array, cv2.COLOR_BGR2RGB)
 
-    #Pemampatan (Resize)
+    # Pemampatan (Resize)
     compressed = cv2.resize(original_rgb, size)
 
-    #Grayscale
+    # Grayscale
     gray = cv2.cvtColor(compressed, cv2.COLOR_RGB2GRAY)
 
-    #Binerisasi (Threshold)
+    # Binerisasi (Threshold)
     _, binary = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
 
-    #Filtering (Gaussian Blur)
+    # Filtering (Gaussian Blur)
     blurred = cv2.GaussianBlur(compressed, (3, 3), 0)
 
-    #Enhancement (Histogram Equalization)
-    gray_eq = cv2.equalizeHist(gray)
+    # Enhancement (Histogram Equalization)
+    img_yuv = cv2.cvtColor(blurred, cv2.COLOR_RGB2YUV)
+    img_yuv[:, :, 0] = cv2.equalizeHist(img_yuv[:, :, 0])
+    enhanced = cv2.cvtColor(img_yuv, cv2.COLOR_YUV2RGB)
 
-    #Normalisasi (0–1)
-    normalized = blurred / 255.0
+    # Normalisasi (0–1)
+    normalized = enhanced / 255.0
 
-    #Siap Masuk Model CNN
+    # Siap Masuk Model CNN
     input_tensor = np.expand_dims(normalized, axis=0)
 
     return {
@@ -56,11 +76,12 @@ def full_preprocessing_pipeline(image_array, size=(256, 256)):
         "gray": gray,
         "binary": binary,
         "blurred": blurred,
-        "enhanced": gray_eq,
+        "enhanced": enhanced,
         "normalized": normalized,
         "input_tensor": input_tensor
     }
 
+#Upload dan Proses Gambar
 uploaded_file = st.file_uploader("📤 Upload gambar serangga", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
@@ -71,35 +92,37 @@ if uploaded_file is not None:
     # Jalankan semua tahap preprocessing
     data = full_preprocessing_pipeline(img)
 
+    # Tampilkan hasil preprocessing
     st.subheader("🔍 Tahapan Lengkap Preprocessing")
-
     st.image(data["original"], caption="1️⃣ Citra Asli (RGB)", use_column_width=True)
-    st.image(data["compressed"], caption="2️⃣ Citra Setelah Pemampatan (Resize 256x256)", use_column_width=True)
+    st.image(data["compressed"], caption="2️⃣ Citra Setelah Resize (256x256)", use_column_width=True)
 
     col1, col2 = st.columns(2)
     with col1:
-        st.image(data["gray"], caption="3️⃣ Citra Grayscale", use_column_width=True)
+        st.image(data["gray"], caption="3️⃣ Grayscale", use_column_width=True)
     with col2:
-        st.image(data["binary"], caption="4️⃣ Citra Biner (Threshold Otsu)", use_column_width=True)
+        st.image(data["binary"], caption="4️⃣ Binerisasi (Otsu)", use_column_width=True)
 
     col3, col4 = st.columns(2)
     with col3:
-        st.image(data["blurred"], caption="5️⃣ Filtering (Gaussian Blur)", use_column_width=True)
+        st.image(data["blurred"], caption="5️⃣ Gaussian Blur", use_column_width=True)
     with col4:
         st.image(data["enhanced"], caption="6️⃣ Enhancement (Histogram Equalization)", use_column_width=True)
 
-    st.image(data["normalized"], caption="7️⃣ Normalisasi (Nilai Piksel 0–1)", use_column_width=True)
+    st.image(data["normalized"], caption="7️⃣ Normalisasi (0–1)", use_column_width=True)
 
+    # Prediksi dengan model CNN
     preds = model.predict(data["input_tensor"])
     pred_idx = np.argmax(preds)
     confidence = np.max(preds) * 100
     predicted_class = classes[pred_idx]
 
+    # Hasil Prediksi
     st.subheader("📊 Hasil Klasifikasi")
     st.success(f"Hasil Prediksi: **{predicted_class.upper()}**")
     st.write(f"Confidence: **{confidence:.2f}%**")
 
-    # Tampilkan probabilitas semua kelas
+    # Probabilitas semua kelas
     st.write("🔢 Probabilitas masing-masing kelas:")
     prob_table = {classes[i]: float(preds[0][i]) for i in range(len(classes))}
     st.table(prob_table)

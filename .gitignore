@@ -1,0 +1,44 @@
+
+---
+
+## ⚙️ **.gitignore**
+```gitignore
+# Folder dan file umum yang tidak perlu diunggah ke GitHub
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+*.tmp
+.DS_Store
+
+# File model besar
+pest_classifier_cnn.h5
+*.h5
+*.hdf5
+
+# File sementara Streamlit / TensorFlow
+.streamlit/
+checkpoints/
+saved_models/
+logs/
+runs/
+
+# Virtual environment
+env/
+venv/
+.venv/
+
+# File sistem IDE/editor
+.vscode/
+.idea/
+*.swp
+*.bak
+
+# Cache dataset atau hasil output
+*.npy
+*.npz
+*.csv
+*.zip
+*.tar
+*.gz
