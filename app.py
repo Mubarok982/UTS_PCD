@@ -1,7 +1,10 @@
 import os
+import numpy as np
+import cv2
 import gdown
 import tensorflow as tf
 import streamlit as st
+
 
 MODEL_PATH = "pest_classifier_cnn.h5"
 import gdown
